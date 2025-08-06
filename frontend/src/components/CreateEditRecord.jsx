@@ -88,7 +88,7 @@ export default function CreateEditRecord() {
     setError('');
     setSuccess('');
     try {
-      const response = await fetch(`http://localhost:5000/api/record/${email}`);
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/api/record/${email}`);
       if (response.ok) {
         const data = await response.json();
         setRecord(data);
@@ -183,7 +183,7 @@ export default function CreateEditRecord() {
           month: getMonthShort(values.date),
           week: getWeekOfMonth(values.date)
         };
-        const res = await fetch('http://localhost:5000/api/record', {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/api/record`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)

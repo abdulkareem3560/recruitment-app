@@ -94,4 +94,4 @@ app.post('/api/record', (req, res) => {
   res.json({message: "Record added"});
 });
 
-app.listen(5000, () => console.log('API running on http://localhost:5000'));
+app.listen(5000, () => console.log('API running on PORT: 5000'));

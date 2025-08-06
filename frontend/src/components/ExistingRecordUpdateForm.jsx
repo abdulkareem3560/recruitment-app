@@ -198,7 +198,7 @@ export default function ExistingRecordUpdateForm({record, email, onUpdateComplet
           offeredMonth: getMonthShort(values.offeredDate),
           joiningMonth: getMonthShort(values.dateOfJoining),
         };
-        const res = await fetch("http://localhost:5000/api/record", {
+        const res = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/api/record`, {
           method: "POST", // or PUT for update if your backend supports it
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify(payload),
