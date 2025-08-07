@@ -1,25 +1,33 @@
-import React, { useState } from 'react';
-import { useFormik } from 'formik';
+import React, {useState} from 'react';
+import {useFormik} from 'formik';
 import * as Yup from 'yup';
-import { primaryColor } from '../theme';
+import {primaryColor} from '../theme';
 import ExistingRecordUpdateForm from "./ExistingRecordUpdateForm.jsx";
 
-const DUMMIES = ['dummy1', 'dummy2', 'dummy3'];
-const YESNO = ['Yes', 'No'];
-const SCREENING = ['Shortlisted', 'Rejected', 'Yet to screen'];
-const HACKER = [...SCREENING, 'N/A'];
-const YEARS = Array.from({ length: 30 }, (_, i) => (i + 1).toString());
-const MONTHS = Array.from({ length: 12 }, (_, i) => (i + 1).toString());
-const EDU = ['B.Tech', 'M.Tech', 'MCA', 'BCA', 'Other'];
-const YEARS_PASS = Array.from({ length: 30 }, (_, i) => (2025 - i).toString());
-const LOCS = DUMMIES;
+import {
+  CLIENTS,
+  SOURCES,
+  YEARS,
+  MONTHS,
+  YEARS_PASS,
+  SOURCER_NAMES,
+  RECRUITERS,
+  EMPLOYMENT_TYPES,
+  ROLES,
+  WORK_FROM_OFFICE,
+  EDUCATION,
+  PREFERRED_LOCATIONS,
+  SCREENING,
+  HACKERRANK_ASSESSMENT
+} from "../consts"
 
-// Helpers
+// Helper Functions
 const getMonthShort = (dateStr) => {
   if (!dateStr) return '';
   const date = new Date(dateStr);
-  return date.toLocaleString('default', { month: 'short' });
+  return date.toLocaleString('default', {month: 'short'});
 };
+
 const getWeekOfMonth = (dateStr) => {
   if (!dateStr) return '';
   const date = new Date(dateStr);
@@ -29,7 +37,7 @@ const getWeekOfMonth = (dateStr) => {
 };
 
 // Input component outside to avoid recreation
-const InputGroup = ({ name, label, type = 'text', formik, loading, ...rest }) => (
+const InputGroup = ({name, label, type = 'text', formik, loading, ...rest}) => (
   <div style={fieldGroupStyle}>
     <label style={labelStyle} htmlFor={name}>{label}</label>
     <input
@@ -50,7 +58,7 @@ const InputGroup = ({ name, label, type = 'text', formik, loading, ...rest }) =>
 );
 
 // Dropdown component outside to avoid recreation
-const DropdownGroup = ({ name, label, options, formik, loading }) => (
+const DropdownGroup = ({name, label, options, formik, loading}) => (
   <div style={fieldGroupStyle}>
     <label style={labelStyle} htmlFor={name}>{label}</label>
     <select
@@ -131,7 +139,7 @@ export default function CreateEditRecord() {
     keySkillsExperience: Yup.string().required('Required'),
     workFromOffice: Yup.string().required('Required'),
     currentCompany: Yup.string().required('Required'),
-    currentCompanyJoiningDate: Yup.string().required('Required'),
+    // currentCompanyJoiningDate: Yup.string().required('Required'),
     previousCompany: Yup.string().required('Required'),
     education: Yup.string().required('Required'),
     passedOutYear: Yup.string().required('Required'),
@@ -158,7 +166,7 @@ export default function CreateEditRecord() {
     keySkillsExperience: '',
     workFromOffice: '',
     currentCompany: '',
-    currentCompanyJoiningDate: '',
+    // currentCompanyJoiningDate: '',
     previousCompany: '',
     education: '',
     passedOutYear: '',
@@ -172,7 +180,7 @@ export default function CreateEditRecord() {
   const formik = useFormik({
     initialValues,
     validationSchema,
-    onSubmit: async (values, { resetForm }) => {
+    onSubmit: async (values, {resetForm}) => {
       setLoading(true);
       setError('');
       setSuccess('');
@@ -185,7 +193,7 @@ export default function CreateEditRecord() {
         };
         const res = await fetch(`${import.meta.env.VITE_BACKEND_BASE_URL}/api/record`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {'Content-Type': 'application/json'},
           body: JSON.stringify(payload)
         });
         if (res.ok) {
@@ -225,7 +233,7 @@ export default function CreateEditRecord() {
   return (
     <div style={outerContainerStyle}>
       <div style={getInnerContainerStyle(verified)} className="thin-scrollbar">
-        <h2 style={{ color: primaryColor, textAlign: 'center' }}>Create / Edit Record</h2>
+        <h2 style={{color: primaryColor, textAlign: 'center'}}>Create / Edit Record</h2>
 
         {/* Email input and Verify always shown */}
         <div style={emailContainerStyle}>
@@ -252,7 +260,7 @@ export default function CreateEditRecord() {
           </button>
         </div>
 
-        {/* Show record if exists (disabled fields) */}
+        {/* Show existing record update form if record found */}
         {verified && record && (
           <ExistingRecordUpdateForm
             record={record}
@@ -265,80 +273,99 @@ export default function CreateEditRecord() {
           />
         )}
 
-        {/* If email verified and DOES NOT exist, show Formik form */}
+        {/* If email verified and does NOT exist, show Formik form */}
         {verified && !record && (
-          <form style={{ marginTop: 18 }} onSubmit={formik.handleSubmit} autoComplete="off">
-            <h3>General Details</h3>
-            <div style={gridContainerStyle}>
-              <InputGroup name="date" label="Date" type="date" formik={formik} loading={loading} />
-              <div style={fieldGroupStyle}>
-                <label style={labelStyle}>Month</label>
-                <input style={inputStyle} value={derivedMonth} disabled />
+          <>
+            <form style={{marginTop: 18}} onSubmit={formik.handleSubmit} autoComplete="off">
+              {/* General Details */}
+              <h3>General Details</h3>
+              <div style={gridContainerStyle}>
+                <InputGroup name="date" label="Date" type="date" formik={formik} loading={loading}/>
+                <div style={fieldGroupStyle}>
+                  <label style={labelStyle}>Month</label>
+                  <input style={inputStyle} value={derivedMonth} disabled/>
+                </div>
+                <div style={fieldGroupStyle}>
+                  <label style={labelStyle}>Week</label>
+                  <input style={inputStyle} value={derivedWeek} disabled/>
+                </div>
               </div>
-              <div style={fieldGroupStyle}>
-                <label style={labelStyle}>Week</label>
-                <input style={inputStyle} value={derivedWeek} disabled />
+
+              {/* Experience */}
+              <h3>Experience</h3>
+              <div style={gridContainerStyle}>
+                <InputGroup name="currentCompany" label="Current Company" formik={formik} loading={loading}/>
+                <DropdownGroup name="expYears" label="Exp - Years" options={YEARS} formik={formik} loading={loading}/>
+                <DropdownGroup name="expMonths" label="Exp - Months" options={MONTHS} formik={formik}
+                               loading={loading}/>
+                <InputGroup name="keySkillsExperience" label="Key Skills Experience" formik={formik} loading={loading}/>
+                <InputGroup name="previousCompany" label="Previous Company" formik={formik} loading={loading}/>
               </div>
-            </div>
 
-            <h3>Experience</h3>
-            <div style={gridContainerStyle}>
-              <InputGroup name="currentCompany" label="Current Company" formik={formik} loading={loading} />
-              <DropdownGroup name="expYears" label="Exp - Years" options={YEARS} formik={formik} loading={loading} />
-              <DropdownGroup name="expMonths" label="Exp - Months" options={MONTHS} formik={formik} loading={loading} />
-              <InputGroup name="keySkillsExperience" label="Key Skills Experience" formik={formik} loading={loading} />
-              <InputGroup name="previousCompany" label="Previous Company" formik={formik} loading={loading} />
-            </div>
+              {/* Education */}
+              <h3>Education</h3>
+              <div style={gridContainerStyle}>
+                <DropdownGroup name="education" label="Education" options={EDUCATION} formik={formik}
+                               loading={loading}/>
+                <DropdownGroup name="passedOutYear" label="Passed out Year" options={YEARS_PASS} formik={formik}
+                               loading={loading}/>
+              </div>
 
-            <h3>Education</h3>
-            <div style={gridContainerStyle}>
-              <DropdownGroup name="education" label="Education" options={EDU} formik={formik} loading={loading} />
-              <DropdownGroup name="passedOutYear" label="Passed out Year" options={YEARS_PASS} formik={formik} loading={loading} />
-            </div>
+              {/* Personal */}
+              <h3>Personal</h3>
+              <div style={gridContainerStyle}>
+                <InputGroup name="candidateName" label="Candidate Name" formik={formik} loading={loading}/>
+                <InputGroup name="contactNo" label="Contact No" formik={formik} loading={loading}/>
+                <InputGroup name="currentLocation" label="Current Location" formik={formik} loading={loading}/>
+              </div>
 
-            <h3>Personal</h3>
-            <div style={gridContainerStyle}>
-              <InputGroup name="candidateName" label="Candidate Name" formik={formik} loading={loading} />
-              <InputGroup name="contactNo" label="Contact No" formik={formik} loading={loading} />
-              <DropdownGroup name="currentLocation" label="Current Location" options={LOCS} formik={formik} loading={loading} />
-            </div>
+              {/* Screening */}
+              <h3>Screening</h3>
+              <div style={gridContainerStyle}>
+                <DropdownGroup name="screeningStatus" label="Screening Status" options={SCREENING} formik={formik}
+                               loading={loading}/>
+                <DropdownGroup name="hackerrankAssessment" label="HackerRank Assessment" options={HACKERRANK_ASSESSMENT}
+                               formik={formik} loading={loading}/>
+                <InputGroup name="l1Date" label="L1 Date" type="date" formik={formik} loading={loading}/>
+              </div>
 
-            <h3>Screening</h3>
-            <div style={gridContainerStyle}>
-              <DropdownGroup name="screeningStatus" label="Screening Status" options={SCREENING} formik={formik} loading={loading} />
-              <DropdownGroup name="hackerrankAssessment" label="HackerRank Assessment" options={HACKER} formik={formik} loading={loading} />
-              <InputGroup name="l1Date" label="L1 Date" type="date" formik={formik} loading={loading} />
-            </div>
-
-            <h3>Other Details</h3>
-            <div style={gridContainerStyle}>
-              <InputGroup name="requestedId" label="Requested ID" formik={formik} loading={loading} />
-              <InputGroup name="client" label="Client" formik={formik} loading={loading} />
-              <DropdownGroup name="source" label="Source" options={DUMMIES} formik={formik} loading={loading} />
-              <DropdownGroup name="sourcerName" label="Sourcer Name" options={DUMMIES} formik={formik} loading={loading} />
-              <DropdownGroup name="recruiter" label="Recruiter" options={DUMMIES} formik={formik} loading={loading} />
-              <DropdownGroup name="employmentType" label="Employment Type" options={DUMMIES} formik={formik} loading={loading} />
-              <DropdownGroup name="currentRole" label="Current Role" options={DUMMIES} formik={formik} loading={loading} />
-              <DropdownGroup name="workFromOffice" label="Work from office" options={YESNO} formik={formik} loading={loading} />
-              <DropdownGroup name="preferredLocation" label="Preferred Location" options={LOCS} formik={formik} loading={loading} />
-            </div>
-            <div style={{width:"100%", marginTop: "2rem", textAlign:"center"}}>
-              <button
-                type="submit"
-                style={{
-                  ...verifyButtonStyle(true, loading),
-                  width: 'fit-content',
-                  marginTop: 'auto',
-                  fontSize: 17,
-                }}
-                disabled={loading}
-              >
-                {loading ? 'Saving...' : 'Save'}
-              </button>
-            </div>
-            {error && <div style={{ color: 'red', marginTop: 10, textAlign: 'center' }}>{error}</div>}
-            {success && <div style={{ color: 'green', marginTop: 10, textAlign: 'center' }}>{success}</div>}
-          </form>
+              {/* Other Details */}
+              <h3>Other Details</h3>
+              <div style={gridContainerStyle}>
+                <InputGroup name="requestedId" label="Requested ID" formik={formik} loading={loading}/>
+                <DropdownGroup name="client" label="Client" options={CLIENTS} formik={formik} loading={loading}/>
+                <DropdownGroup name="source" label="Source" options={SOURCES} formik={formik} loading={loading}/>
+                <DropdownGroup name="sourcerName" label="Sourcer Name" options={SOURCER_NAMES} formik={formik}
+                               loading={loading}/>
+                <DropdownGroup name="recruiter" label="Recruiter" options={RECRUITERS} formik={formik}
+                               loading={loading}/>
+                <DropdownGroup name="employmentType" label="Employment Type" options={EMPLOYMENT_TYPES} formik={formik}
+                               loading={loading}/>
+                <DropdownGroup name="currentRole" label="Current Role" options={ROLES} formik={formik}
+                               loading={loading}/>
+                <DropdownGroup name="workFromOffice" label="Work from office" options={WORK_FROM_OFFICE} formik={formik}
+                               loading={loading}/>
+                <DropdownGroup name="preferredLocation" label="Preferred Location" options={PREFERRED_LOCATIONS}
+                               formik={formik} loading={loading}/>
+              </div>
+              <div style={{width: "100%", marginTop: "2rem", textAlign: "center"}}>
+                <button
+                  type="submit"
+                  style={{
+                    ...verifyButtonStyle(true, loading),
+                    width: 'fit-content',
+                    marginTop: 'auto',
+                    fontSize: 17,
+                  }}
+                  disabled={loading}
+                >
+                  {loading ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+              {error && <div style={{color: 'red', marginTop: 10, textAlign: 'center'}}>{error}</div>}
+              {success && <div style={{color: 'green', marginTop: 10, textAlign: 'center'}}>{success}</div>}
+            </form>
+          </>
         )}
       </div>
     </div>
