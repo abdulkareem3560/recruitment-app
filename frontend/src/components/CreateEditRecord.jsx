@@ -1,4 +1,5 @@
 import React, {useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import {useFormik} from 'formik';
 import * as Yup from 'yup';
 import {primaryColor} from '../theme';
@@ -88,6 +89,8 @@ export default function CreateEditRecord() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const navigate = useNavigate();
 
   // Standalone email verify
   const verifyEmail = async () => {
@@ -219,7 +222,7 @@ export default function CreateEditRecord() {
 
   const getInnerContainerStyle = (verified) => ({
     width: '100%',
-    maxWidth: verified ? "95%" : 420,
+    maxWidth: verified ? "95%" : 450,
     background: '#fff',
     borderRadius: 12,
     padding: 24,
@@ -232,8 +235,35 @@ export default function CreateEditRecord() {
 
   return (
     <div style={outerContainerStyle}>
+      {!verified && <button style={{
+        position: 'absolute',
+        top: 20,
+        right: 20,
+        borderRadius: '6px',
+        cursor: 'pointer',
+        border: `1px solid ${primaryColor}`,
+        color: primaryColor,
+        padding: '8px 10px',
+        "&:hover": {
+          border: `2px solid ${primaryColor}`,
+        }
+      }} onClick={() => navigate("/home")}>⬅️ Back</button>}
       <div style={getInnerContainerStyle(verified)} className="thin-scrollbar">
-        <h2 style={{color: primaryColor, textAlign: 'center'}}>Create / Edit Record</h2>
+        <div style={{display: "flex",
+        justifyContent: "space-between"}}>
+          <p></p>
+          <h2 style={{color: primaryColor, textAlign: 'center'}}>Create / Edit Record</h2>
+          {verified ? <button style={{
+            borderRadius: '6px',
+            cursor: 'pointer',
+            border: `1px solid ${primaryColor}`,
+            color: primaryColor,
+            padding: '8px 10px',
+            "&:hover": {
+              border: `2px solid ${primaryColor}`,
+            }
+          }} onClick={() => navigate("/home")}>⬅️ Back</button>: <p></p>}
+        </div>
 
         {/* Email input and Verify always shown */}
         <div style={emailContainerStyle}>

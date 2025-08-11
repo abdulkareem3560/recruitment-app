@@ -1,97 +1,120 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs');
 const bcrypt = require('bcryptjs');
-const bodyParser = require('body-parser');
-const USERS_FILE = './users.json';
+const { MongoClient } = require('mongodb');
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-// Helper to read users
-function readUsers() {
-  if (!fs.existsSync(USERS_FILE)) return [];
-  const data = fs.readFileSync(USERS_FILE, 'utf-8');
-  return JSON.parse(data || '[]');
+const MONGO_URI = process.env.MONGO_URI; // from .env
+const DB_NAME = 'recruitment';            // change as desired
+const USERS_COLLECTION = 'users';
+const RECORDS_COLLECTION = 'records';
+
+let client, db;
+async function connectToDb() {
+  if (!client || !client.topology?.isConnected()) {
+    client = new MongoClient(MONGO_URI);
+    await client.connect();
+    db = client.db(DB_NAME);
+    console.log('✅ Connected to MongoDB Atlas');
+  }
 }
 
-// Helper to write users
-function writeUsers(users) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
-}
+// ======= AUTH ROUTES ======= //
 
 // Signup
-app.post('/api/signup', (req, res) => {
-  const { firstName, lastName, email, password } = req.body;
-  const users = readUsers();
+app.post('/api/signup', async (req, res) => {
+  try {
+    const { firstName, lastName, email, password } = req.body;
+    if (!email || !password) return res.status(400).json({ message: 'Email and password are required' });
 
-  if (users.find((u) => u.email === email)) {
-    return res.status(409).json({ message: 'Email already exists' });
+    await connectToDb();
+    const existing = await db.collection(USERS_COLLECTION).findOne({ email: email.toLowerCase() });
+    if (existing) {
+      return res.status(409).json({ message: 'Email already exists' });
+    }
+
+    const hash = bcrypt.hashSync(password, 8);
+    await db.collection(USERS_COLLECTION).insertOne({
+      firstName,
+      lastName,
+      email: email.toLowerCase(),
+      password: hash
+    });
+
+    res.status(201).json({ message: 'Signup successful' });
+  } catch (err) {
+    console.error('Signup error:', err);
+    res.status(500).json({ message: 'Server error' });
   }
-
-  const hash = bcrypt.hashSync(password, 8);
-
-  users.push({ firstName, lastName, email, password: hash });
-  writeUsers(users);
-
-  res.status(201).json({ message: 'Signup successful' });
 });
 
 // Login
-app.post('/api/login', (req, res) => {
-  const { email, password } = req.body;
-  const users = readUsers();
-  const user = users.find((u) => u.email === email);
+app.post('/api/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    await connectToDb();
 
-  if (!user) {
-    return res.status(401).json({ message: 'Invalid credentials' });
+    const user = await db.collection(USERS_COLLECTION).findOne({ email: email.toLowerCase() });
+    if (!user) return res.status(401).json({ message: 'Invalid credentials' });
+
+    const valid = bcrypt.compareSync(password, user.password);
+    if (!valid) return res.status(401).json({ message: 'Invalid credentials' });
+
+    const { password: pwd, ...userData } = user;
+    res.json({ message: 'Login successful', user: userData });
+
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ message: 'Server error' });
   }
-
-  const valid = bcrypt.compareSync(password, user.password);
-  if (!valid) {
-    return res.status(401).json({ message: 'Invalid credentials' });
-  }
-
-  // For basic demo, return success and user info minus password
-  const { password: pwd, ...userData } = user;
-  res.json({ message: 'Login successful', user: userData });
 });
 
-const RECORDS_FILE = './records.json';
+// ======= RECORD ROUTES ======= //
 
-// Helper to read records
-function readRecords() {
-  if (!fs.existsSync(RECORDS_FILE)) return [];
-  const data = fs.readFileSync(RECORDS_FILE, 'utf8');
-  return JSON.parse(data || '[]');
-}
-
-// API: GET record by email
-app.get('/api/record/:email', (req, res) => {
-  const email = req.params.email.toLowerCase();
-  const records = readRecords();
-  const record = records.find(r => r.email.toLowerCase() === email);
-  if (record) {
+// GET record by email
+app.get('/api/record/:email', async (req, res) => {
+  try {
+    await connectToDb();
+    const email = req.params.email.toLowerCase();
+    const record = await db.collection(RECORDS_COLLECTION).findOne({ email });
+    if (!record) return res.status(404).json({ message: 'Record not found' });
     res.json(record);
-  } else {
-    res.status(404).json({ message: 'Record not found' });
+  } catch (err) {
+    console.error('Get record error:', err);
+    res.status(500).json({ message: 'Server error' });
   }
 });
 
-app.post('/api/record', (req, res) => {
-  const newRecord = req.body;
-  let records = [];
-  if (fs.existsSync(RECORDS_FILE)) {
-    records = JSON.parse(fs.readFileSync(RECORDS_FILE, 'utf-8') || '[]');
+// Add new record (prevent duplicate by email)
+app.post('/api/record', async (req, res) => {
+  try {
+    await connectToDb();
+    const newRecord = req.body;
+    if (!newRecord.email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+    const emailLower = newRecord.email.toLowerCase();
+
+    const existing = await db.collection(RECORDS_COLLECTION).findOne({ email: emailLower });
+    if (existing) {
+      return res.status(409).json({ message: 'Record with this email already exists' });
+    }
+
+    await db.collection(RECORDS_COLLECTION).insertOne({
+      ...newRecord,
+      email: emailLower
+    });
+
+    res.json({ message: 'Record added' });
+  } catch (err) {
+    console.error('Add record error:', err);
+    res.status(500).json({ message: 'Server error' });
   }
-  // Prevent duplicate by email
-  if (records.some(r => r.email && r.email.toLowerCase() === (newRecord.email || '').toLowerCase())) {
-    return res.status(409).json({message: "Record with this email already exists"});
-  }
-  records.push(newRecord);
-  fs.writeFileSync(RECORDS_FILE, JSON.stringify(records, null, 2));
-  res.json({message: "Record added"});
 });
 
-app.listen(5000, () => console.log('API running on PORT: 5000'));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

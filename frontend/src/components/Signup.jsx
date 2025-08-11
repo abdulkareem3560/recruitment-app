@@ -26,6 +26,7 @@ const Signup = () => {
         .required('Last name is required'),
       email: Yup.string()
         .email('Invalid email format')
+        .matches(/^[a-zA-Z0-9._%+-]+@sonata-software\.com$/, 'Only sonata-software.com domain is allowed')
         .required('Email is required'),
       password: Yup.string()
         .min(6, 'Minimum 6 characters')
@@ -68,8 +69,10 @@ const Signup = () => {
       }}>
 
       <div style={{
-        width: "30%",
-        margin: "40px auto",
+        width: "100%",
+        maxWidth: 400,
+        minWidth: 260,
+        margin: "0 10px",
         padding: 24,
         background: "#fff",
         borderRadius: 12,
@@ -154,7 +157,13 @@ const Signup = () => {
   );
 };
 
-const inputStyle = {width: "96%", padding: 8, margin: "8px 0", borderRadius: 6, border: "1px solid #ccc"};
+const inputStyle = {
+  width: "100%",
+  padding: 8,
+  margin: "8px 0",
+  borderRadius: 6,
+  border: "1px solid #ccc"
+};
 const errorStyle = {color: "red", fontSize: 13, marginBottom: 2};
 const buttonStyle = {
   width: "100%",

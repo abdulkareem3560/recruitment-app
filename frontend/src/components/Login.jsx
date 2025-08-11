@@ -10,8 +10,9 @@ const Login = () => {
   const formik = useFormik({
     initialValues: {email: '', password: ''},
     validationSchema: Yup.object({
-      email: Yup.string().email('Invalid email format').required('Email is required'),
-      password: Yup.string().required('Password is required'),
+      email: Yup.string().email('Invalid email format').matches(/^[a-zA-Z0-9._%+-]+@sonata-software\.com$/, 'Only sonata-software.com domain is allowed')
+        .required('Email is required'),
+      password: Yup.string().required('Password is required')
     }),
     onSubmit: async (values, {setSubmitting, setStatus}) => {
       try {
@@ -47,12 +48,14 @@ const Login = () => {
       }}>
 
       <div style={{
-        width: "30%",
-        margin: "40px auto",
-        padding: 24,
+        width: "100%",
+        maxWidth: 400,
+        minWidth: 260,
+        margin: "0 10px",
+        padding: "24px",
         background: "#fff",
         borderRadius: 12,
-        boxShadow: '0 4px 16px rgb(25 118 210 / 0.2)',
+        boxShadow: '0 4px 16px rgb(25 118 210 / 0.2)'
       }}>
         <h2 style={{color: primaryColor}}>Login</h2>
         <form onSubmit={formik.handleSubmit}>
@@ -92,7 +95,13 @@ const Login = () => {
   );
 };
 
-const inputStyle = {width: "96%", padding: 8, margin: "8px 0", borderRadius: 6, border: "1px solid #ccc"};
+const inputStyle = {
+  width: "100%",
+  padding: 8,
+  margin: "10px 0",
+  borderRadius: 6,
+  border: "1px solid #ccc",
+};
 const errorStyle = {color: "red", fontSize: 13, marginBottom: 2};
 const buttonStyle = {
   width: "100%",
