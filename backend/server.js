@@ -116,5 +116,9 @@ app.post('/api/record', async (req, res) => {
   }
 });
 
+app.get("/ping", (req, res) => {
+  res.send("Server is running");
+})
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
